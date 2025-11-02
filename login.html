@@ -1,0 +1,62 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Login</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <header class="header">
+    <div class="brand logo-float">WebDev Demo</div>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="signup.html">Sign up</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="card" style="max-width:520px;margin:auto">
+      <h2>Welcome back</h2>
+      <p class="small">Sign in to access Blog, PDF Summarizer and Scraper.</p>
+      <div id="msg" class="small"></div>
+      <input id="email" class="form-control" type="email" placeholder="Email">
+      <input id="password" class="form-control" type="password" placeholder="Password">
+      <div class="mt-12">
+        <button id="loginBtn" class="btn">Login</button>
+        <a href="signup.html" style="margin-left:10px" class="small">Create an account</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+  // Use relative path that works when frontend and backend are side-by-side in the server root:
+  const backend = "../backend/auth/login.php";
+  document.getElementById('loginBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('msg');
+    msg.textContent = 'Logging in...';
+    msg.className = 'small';
+    try {
+      const res = await fetch(backend, {
+        method:'POST',
+        credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({email,password})
+      });
+      const data = await res.json();
+      if (data.success) {
+        msg.textContent = 'Login success — redirecting to Blog...';
+        window.location.href = 'blog.html';
+      } else {
+        msg.textContent = data.error || 'Login failed';
+        msg.className = 'small error';
+      }
+    } catch (e) {
+      msg.textContent = 'Network error — check backend server or file paths';
+      msg.className = 'small error';
+    }
+  });
+  </script>
+</body>
+</html>

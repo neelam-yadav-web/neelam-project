@@ -1,0 +1,38 @@
+<!doctype html>
+<html><head><meta charset="utf-8"/><title>Scraper</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<header class="header"><div class="brand logo-float">WebDev Demo</div><nav class="nav"><a href="index.html">Home</a><a href="blog.html">Blog</a></nav></header>
+<main class="container">
+  <div class="card" style="max-width:900px;margin:auto">
+    <h2>Google Scraper (demo)</h2>
+    <div class="small">Enter a keyword to fetch top results</div>
+    <input id="q" class="form-control" placeholder="e.g., web development tutorials">
+    <div style="display:flex;gap:8px;margin-top:8px;"><button id="go" class="btn">Search</button><button id="clear" class="btn secondary">Clear</button></div>
+    <div id="out" style="margin-top:12px"></div>
+  </div>
+</main>
+
+<script>
+document.getElementById('go').addEventListener('click', async ()=>{
+  const q = document.getElementById('q').value.trim();
+  const out = document.getElementById('out');
+  if (!q) { out.textContent = 'Enter a query'; return; }
+  out.textContent = 'Searching...';
+  try {
+    const res = await fetch('../backend/scraper/scrape.php?q='+encodeURIComponent(q), {credentials:'include'});
+    const data = await res.json();
+    if (!data.success) { out.textContent = data.error || 'Failed'; return; }
+    out.innerHTML = '';
+    data.results.forEach(r=>{
+      const d = document.createElement('div');
+      d.className = 'card';
+      d.innerHTML = `<a href="${r.link}" target="_blank"><b>${r.title}</b></a><div class="small">${r.link}</div>`;
+      out.appendChild(d);
+    });
+  } catch(e){ out.textContent = 'Network error — check server or file paths'; }
+});
+
+document.getElementById('clear').addEventListener('click', ()=>{ document.getElementById('q').value=''; document.getElementById('out').innerHTML=''; });
+</script>
+</body>
+</html>

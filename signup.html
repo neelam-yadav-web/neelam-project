@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Sign Up | WebDev Demo</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    /* Inline fallback styling (in case CSS not loaded) */
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #74ABE2, #5563DE);
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 24px;
+      background: #007BFF;
+      color: #fff;
+    }
+    .header a {
+      color: #fff;
+      text-decoration: none;
+      margin-left: 16px;
+      font-weight: 500;
+    }
+    .container {
+      margin-top: 80px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .card {
+      background: #fff;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      text-align: center;
+      width: 420px;
+      transition: all 0.3s ease;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 15px;
+    }
+    .btn {
+      background: #007BFF;
+      border: none;
+      color: #fff;
+      padding: 10px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    .btn:hover {
+      background: #0056d2;
+      transform: translateY(-1px);
+    }
+    .small {
+      font-size: 14px;
+      margin-top: 5px;
+    }
+    .error { color: #e63946; }
+    .success { color: #06c167; }
+  </style>
+</head>
+
+<body>
+  <header class="header">
+    <div class="brand">WebDev Demo</div>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="login.html">Login</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <div class="card">
+      <h2>Create Account</h2>
+      <p class="small">Use a valid email. Password must be at least 6 characters.</p>
+
+      <div id="msg" class="small"></div>
+
+      <input id="email" class="form-control" type="email" placeholder="Email" />
+      <input id="password" class="form-control" type="password" placeholder="Password (min 6 chars)" />
+
+      <div style="margin-top: 16px;">
+        <button id="signupBtn" class="btn">Create Account</button>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ✅ Adjust this path if your backend folder is renamed
+    const apiBase = "http://localhost/web-dev-project/backend/auth/signup.php";
+
+    document.getElementById('signupBtn').addEventListener('click', async () => {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const msg = document.getElementById('msg');
+
+      msg.textContent = '';
+      msg.className = 'small';
+
+      if (!email || !password) {
+        msg.textContent = '⚠️ Please enter both email and password.';
+        msg.className = 'small error';
+        return;
+      }
+
+      msg.textContent = '⏳ Creating account...';
+      msg.className = 'small';
+
+      try {
+        const res = await fetch(apiBase, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          msg.textContent = '✅ Account created successfully! Redirecting...';
+          msg.className = 'small success';
+          setTimeout(() => window.location.href = 'blog.html', 1200);
+        } else {
+          msg.textContent = data.error || '⚠️ Signup failed. Please try again.';
+          msg.className = 'small error';
+        }
+      } catch (err) {
+        console.error(err);
+        msg.textContent = '❌ Network error — check backend server or file paths.';
+        msg.className = 'small error';
+      }
+    });
+  </script>
+</body>
+</html>

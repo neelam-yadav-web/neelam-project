@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"/><title>PDF Summarizer</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<header class="header"><div class="brand logo-float">WebDev Demo</div><nav class="nav"><a href="index.html">Home</a><a href="blog.html">Blog</a></nav></header>
+<main class="container">
+  <div class="card" style="max-width:800px;margin:auto">
+    <h2>PDF Summarizer</h2>
+    <p class="small">Upload a PDF and receive a short summary.</p>
+    <input type="file" id="pdfFile" accept=".pdf" class="form-control">
+    <div style="display:flex;gap:8px;margin-top:10px;">
+      <button id="uploadBtn" class="btn">Upload & Summarize</button>
+      <button id="clearBtn" class="btn secondary">Clear</button>
+    </div>
+    <div id="result" class="card mt-12" style="min-height:80px"></div>
+  </div>
+</main>
+<script>
+document.getElementById('uploadBtn').addEventListener('click', async ()=>{
+  const f = document.getElementById('pdfFile').files[0];
+  const result = document.getElementById('result');
+  result.textContent = 'Uploading...';
+  if (!f) {result.textContent='Choose a PDF';return;}
+  const fd = new FormData();
+  fd.append('pdf', f);
+  try {
+    const res = await fetch('../backend/pdf/summarize.php', {method:'POST', credentials:'include', body:fd});
+    const data = await res.json();
+    if (data.success) result.textContent = data.summary;
+    else result.textContent = data.error || 'Failed';
+  } catch(e){ result.textContent = 'Network error — check server or file paths'; }
+});
+document.getElementById('clearBtn').addEventListener('click', ()=>{ document.getElementById('pdfFile').value=''; document.getElementById('result').textContent=''; });
+</script>
+</body>
+</html>

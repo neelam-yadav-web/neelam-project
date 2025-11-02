@@ -1,0 +1,127 @@
+<!doctype html>
+<html>
+<head><meta charset="utf-8"/><title>Blog</title><link rel="stylesheet" href="assets/style.css"></head>
+<body>
+<header class="header">
+  <div class="brand logo-float">WebDev Demo</div>
+  <nav class="nav"><a href="index.html">Home</a><a href="login.html">Login</a><a href="pdf.html">PDF</a><a href="scraper.html">Scraper</a></nav>
+</header>
+
+<main class="container">
+  <div class="card" style="max-width:980px;margin:auto">
+    <h2>Blogs</h2>
+    <div id="status" class="small"></div>
+
+    <div style="margin:12px 0;display:flex;gap:12px;flex-direction:column;">
+      <input id="title" class="form-control" placeholder="New blog title">
+      <textarea id="content" class="form-control" rows="6" placeholder="Content"></textarea>
+      <div style="display:flex;gap:10px;">
+        <button id="createBtn" class="btn">Create</button>
+        <button id="logoutBtn" class="btn secondary">Logout</button>
+      </div>
+    </div>
+
+    <div id="blogs"></div>
+  </div>
+</main>
+
+<script>
+const apiBase = "../backend/blog/";
+async function fetchList() {
+  try {
+    let res = await fetch(apiBase + 'read.php', {credentials:'include'});
+    let data = await res.json();
+    if (!data.success) {
+      document.getElementById('status').textContent = data.error || 'Please login';
+      document.getElementById('status').className='small error';
+      return;
+    }
+    document.getElementById('status').textContent = '';
+    const container = document.getElementById('blogs');
+    container.innerHTML = '';
+    data.blogs.forEach(b=>{
+      const div = document.createElement('div');
+      div.className = 'card blog-item';
+      div.innerHTML = `<strong>${escapeHtml(b.title)}</strong><div class="small">by ${escapeHtml(b.author)} • ${b.created_at}</div><p>${escapeHtml(b.content.substring(0,400))}</p>
+        <div class="flex"><button class="btn" data-id="${b.id}" onclick="view(${b.id})">View</button>
+        <button class="btn secondary" onclick="edit(${b.id},'${escapeAttr(b.title)}')">Edit</button>
+        <button class="btn secondary" onclick="del(${b.id})">Delete</button></div>`;
+      container.appendChild(div);
+    });
+  } catch (e) {
+    document.getElementById('status').textContent = 'Error fetching list';
+    document.getElementById('status').className='small error';
+  }
+}
+
+function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function escapeAttr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
+
+document.getElementById('createBtn').addEventListener('click', async ()=>{
+  const title = document.getElementById('title').value;
+  const content = document.getElementById('content').value;
+  const status = document.getElementById('status');
+  status.textContent = 'Creating...';
+  status.className='small';
+  try {
+    const res = await fetch(apiBase + 'create.php', {
+      method:'POST',
+      credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title,content})
+    });
+    const data = await res.json();
+    if (data.success) {
+      status.textContent = 'Created';
+      status.className='small success';
+      document.getElementById('title').value = '';
+      document.getElementById('content').value = '';
+      fetchList();
+    } else { status.textContent = data.error || 'Failed'; status.className='small error'; }
+  } catch (e) { status.textContent = 'Network error'; status.className='small error'; }
+});
+
+async function view(id){
+  const res = await fetch("../backend/blog/read_single.php?id="+id, {credentials:'include'});
+  const data = await res.json();
+  if (data.success) {
+    alert(data.blog.title + "\n\n" + data.blog.content);
+  } else alert('Not found or login required');
+}
+
+async function edit(id,title){
+  const newTitle = prompt('Edit title', title);
+  if (newTitle === null) return;
+  const newContent = prompt('Edit content (replace)', '');
+  if (newContent === null) return;
+  const res = await fetch(apiBase+'update.php', {
+    method:'POST',
+    credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id, title:newTitle, content:newContent})
+  });
+  const data = await res.json();
+  if (data.success) fetchList(); else alert(data.error || 'Failed');
+}
+
+async function del(id){
+  if (!confirm('Delete this post?')) return;
+  const res = await fetch(apiBase+'delete.php', {
+    method:'POST',
+    credentials:'include',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({id})
+  });
+  const data = await res.json();
+  if (data.success) fetchList(); else alert(data.error || 'Failed');
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+  await fetch('../backend/auth/logout.php', {credentials:'include'});
+  window.location.href = 'index.html';
+});
+
+fetchList();
+</script>
+</body>
+</html>
