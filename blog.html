@@ -1,10 +1,19 @@
 <!doctype html>
 <html>
-<head><meta charset="utf-8"/><title>Blog</title><link rel="stylesheet" href="assets/style.css"></head>
+<head>
+  <meta charset="utf-8"/>
+  <title>Blog</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
 <body>
 <header class="header">
   <div class="brand logo-float">WebDev Demo</div>
-  <nav class="nav"><a href="index.html">Home</a><a href="login.html">Login</a><a href="pdf.html">PDF</a><a href="scraper.html">Scraper</a></nav>
+  <nav class="nav">
+    <a href="index.html">Home</a>
+    <a href="login.html">Login</a>
+    <a href="pdf.html">PDF</a>
+    <a href="scraper.html">Scraper</a>
+  </nav>
 </header>
 
 <main class="container">
@@ -26,99 +35,124 @@
 </main>
 
 <script>
+// Use relative backend paths to stay on the same origin and avoid CORS issues
 const apiBase = "../backend/blog/";
+const authApi = "../backend/auth/";
+
+// Load all blogs
 async function fetchList() {
+  const status = document.getElementById('status');
   try {
-    let res = await fetch(apiBase + 'read.php', {credentials:'include'});
-    let data = await res.json();
+    const res = await fetch(apiBase + 'read.php', { credentials: 'include' });
+    const data = await res.json();
     if (!data.success) {
-      document.getElementById('status').textContent = data.error || 'Please login';
-      document.getElementById('status').className='small error';
+      status.textContent = data.error || 'Not authenticated';
+      status.className = 'small error';
       return;
     }
-    document.getElementById('status').textContent = '';
+
+    status.textContent = '';
     const container = document.getElementById('blogs');
     container.innerHTML = '';
-    data.blogs.forEach(b=>{
+    data.blogs.forEach(b => {
       const div = document.createElement('div');
       div.className = 'card blog-item';
-      div.innerHTML = `<strong>${escapeHtml(b.title)}</strong><div class="small">by ${escapeHtml(b.author)} • ${b.created_at}</div><p>${escapeHtml(b.content.substring(0,400))}</p>
-        <div class="flex"><button class="btn" data-id="${b.id}" onclick="view(${b.id})">View</button>
-        <button class="btn secondary" onclick="edit(${b.id},'${escapeAttr(b.title)}')">Edit</button>
-        <button class="btn secondary" onclick="del(${b.id})">Delete</button></div>`;
+      div.innerHTML = `
+        <strong>${escapeHtml(b.title)}</strong>
+        <div class="small">by ${escapeHtml(b.author)} • ${b.created_at}</div>
+        <p>${escapeHtml(b.content.substring(0,400))}</p>
+        <div class="flex">
+          <button class="btn" onclick="view(${b.id})">View</button>
+          <button class="btn secondary" onclick="edit(${b.id}, '${escapeAttr(b.title)}')">Edit</button>
+          <button class="btn secondary" onclick="del(${b.id})">Delete</button>
+        </div>`;
       container.appendChild(div);
     });
   } catch (e) {
-    document.getElementById('status').textContent = 'Error fetching list';
-    document.getElementById('status').className='small error';
+    status.textContent = 'Network error while fetching blogs';
+    status.className = 'small error';
   }
 }
 
-function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function escapeHtml(s){ return (s||'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function escapeAttr(s){ return (s||'').replace(/'/g,"\\'").replace(/"/g,'\\"'); }
 
 document.getElementById('createBtn').addEventListener('click', async ()=>{
-  const title = document.getElementById('title').value;
-  const content = document.getElementById('content').value;
+  const title = document.getElementById('title').value.trim();
+  const content = document.getElementById('content').value.trim();
   const status = document.getElementById('status');
+
+  if (!title || !content) {
+    status.textContent = 'Please fill out both fields';
+    status.className = 'small error';
+    return;
+  }
+
   status.textContent = 'Creating...';
-  status.className='small';
+  status.className = 'small';
+
   try {
     const res = await fetch(apiBase + 'create.php', {
-      method:'POST',
-      credentials:'include',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({title,content})
+      method: 'POST',
+      credentials: 'include',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ title, content })
     });
     const data = await res.json();
     if (data.success) {
-      status.textContent = 'Created';
-      status.className='small success';
+      status.textContent = 'Blog created successfully';
+      status.className = 'small success';
       document.getElementById('title').value = '';
       document.getElementById('content').value = '';
       fetchList();
-    } else { status.textContent = data.error || 'Failed'; status.className='small error'; }
-  } catch (e) { status.textContent = 'Network error'; status.className='small error'; }
+    } else {
+      status.textContent = data.error || 'Not authenticated';
+      status.className = 'small error';
+    }
+  } catch (e) {
+    status.textContent = 'Network error — could not create blog';
+    status.className = 'small error';
+  }
 });
 
-async function view(id){
-  const res = await fetch("../backend/blog/read_single.php?id="+id, {credentials:'include'});
+async function view(id) {
+  const res = await fetch(apiBase + 'read_single.php?id=' + id, { credentials: 'include' });
   const data = await res.json();
-  if (data.success) {
-    alert(data.blog.title + "\n\n" + data.blog.content);
-  } else alert('Not found or login required');
+  if (data.success) alert(data.blog.title + "\n\n" + data.blog.content);
+  else alert('Not found or login required');
 }
 
-async function edit(id,title){
+async function edit(id, title) {
   const newTitle = prompt('Edit title', title);
   if (newTitle === null) return;
-  const newContent = prompt('Edit content (replace)', '');
+  const newContent = prompt('Edit content', '');
   if (newContent === null) return;
-  const res = await fetch(apiBase+'update.php', {
-    method:'POST',
-    credentials:'include',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({id, title:newTitle, content:newContent})
+
+  const res = await fetch(apiBase + 'update.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ id, title: newTitle, content: newContent })
   });
   const data = await res.json();
   if (data.success) fetchList(); else alert(data.error || 'Failed');
 }
 
-async function del(id){
+async function del(id) {
   if (!confirm('Delete this post?')) return;
-  const res = await fetch(apiBase+'delete.php', {
-    method:'POST',
-    credentials:'include',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({id})
+  const res = await fetch(apiBase + 'delete.php', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ id })
   });
   const data = await res.json();
   if (data.success) fetchList(); else alert(data.error || 'Failed');
 }
 
 document.getElementById('logoutBtn').addEventListener('click', async ()=>{
-  await fetch('../backend/auth/logout.php', {credentials:'include'});
-  window.location.href = 'index.html';
+  await fetch(authApi + 'logout.php', { credentials: 'include' });
+  window.location.href = 'login.html';
 });
 
 fetchList();
