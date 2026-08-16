@@ -1,13 +1,23 @@
-# WebDev Assignment - Upgraded Frontend & Fixes
+# Neelam's Fast Food — Demo Website
 
-This version includes:
-- Clean professional design with gradients, animations, and improved UX.
-- Fixed login/signup fetches to include credentials (cookies) so PHP sessions work reliably when served from the same origin.
-- Slight UI tweaks for Blog, PDF and Scraper pages.
+This repository now includes a simple fast-food website using PHP, HTML, CSS, and JavaScript, with a MySQL backend.
 
-Important: Serve both `frontend/` and `backend/` from the same local webserver root (e.g., place the project folder inside `htdocs` for XAMPP). Then open `http://localhost/<project-folder>/frontend/index.html`.
+Quick setup:
 
-If you still see 'Network error' messages:
-- Ensure PHP is running and backend files are accessible (visit `http://localhost/<project-folder>/backend/auth/login.php` directly to test).
-- Make sure `backend/config.php` database credentials are set and DB imported.
+1. Create a MySQL database (example name: fastfood_db).
+2. Run the SQL script: `mysql -u root -p fastfood_db < sql/create_tables.sql`
+3. Edit `includes/db.php` and set DB_HOST, DB_USER, DB_PASS, DB_NAME (or use environment variables in production).
+4. Serve the site with a PHP-enabled server. Example (from repo root):
+   php -S 0.0.0.0:8000
+
+Pages:
+- `index.php` — main menu and cart UI
+- `order.php` — receives checkout POST and writes orders + items to DB
+- `includes/db.php` — DB connection helper
+- `assets/` — CSS and JS
+
+Notes:
+- Replace placeholder DB credentials before deploying.
+- Images are loaded from Unsplash using topic queries (no stored assets).
+- This is a demo starter. For production, harden inputs, use prepared statements everywhere, CSRF protections, and move secrets to environment variables.
 
